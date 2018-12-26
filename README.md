@@ -29,3 +29,9 @@
 ![pageIndex](/pic/p1.png)
 
 ![pageSuprise](/pic/p2.png)
+
+
+
+顺手也把原型设计放上面吧
+
+![原型](/pic/抽奖网页.jpg)

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>抽奖</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-grid.min.css">
+    <link rel="stylesheet" href="css/bootstrap-reboot.min.css">
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script>
+        //人池
+        var personPool = JSON.parse(localStorage['member-list']).split(/\s*\n\s*(?=\S)/);
+
+        //不会写正则，只能这样了
+        function removeEmpty() {
+            for (var i = 0; i < personPool.length; i++) {
+                if (personPool[i] == undefined || personPool[i].length == 0) {
+                    personPool.splice(i, 1);
+                }
+            }
+        }
+
+        // removeEmpty();
+        //奖池
+        var prizePool = JSON.parse(localStorage['prize-list']);
+
+        //正在抽的奖项
+        var now = 0;
+
+        //重复抽奖开关
+        var repeat = JSON.parse(localStorage['can-multi']);
+        //音乐开关
+        var musicOn = JSON.parse(localStorage['music-on']);
+
+        var randomer;
+
+        $(document).ready(function () {
+
+            function drawRightTable() {
+                //TODO 1.用初始化的prizePool对象，查看目前抽到哪个了。然后绘制右边表格
+                //正在抽的奖项
+                /*                $.each(prizePool, function (index, value) {
+                                    if (value !=undefined){
+                                        now = index > now ? now : index;
+                                    }
+                                });*/
+                if (now < Object.keys(prizePool).length) {
+                    //当前的抽奖对象
+                    var prizeNumNow = prizePool[now];
+                    //数量
+                    var num;
+                    //修改表格头
+                    $.each(prizeNumNow, function (key, value) {
+                        $("#head").html('现抽取 ' + key + ' ' + value + '名');
+                        num = value;
+                    });
+                    //修改表格体
+                    $("#resulting").html("");
+                    for (var i = 0; i < num; i++) {
+                        $("#resulting").append('<tr id="row-' + i + '"><td></td></tr>')
+                    }
+                    //移除奖项对象
+                    prizePool[now] = undefined;
+                } else {
+                    $("#head").html('没了没了');
+                    $("#resulting").html("");
+                }
+
+            }
+
+            drawRightTable();
+            //修改按钮状态
+            $("#ready").attr("disabled", true);
+            $("#stop").attr("disabled", true);
+
+            //注册开始事件
+            $("#start").on('click', function () {
+                //播放音乐
+                if (musicOn) {
+                    $("#runningMic")[0].play();
+                }
+                //修改按钮状态
+                $("#start").attr("disabled", true);
+                $("#stop").removeAttr("disabled");
+
+                //随机表格
+                randomer = setInterval("randRightTable(false);", 100);
+            });
+
+            $("#stop").on('click', function () {
+                //开关音乐
+                if (musicOn) {
+                    $("#runningMic")[0].pause();
+                    $("#stopMic")[0].play();
+                }
+                //按钮状态
+                $("#ready").removeAttr("disabled");
+                $("#stop").attr("disabled", true);
+                //停止随机
+                clearInterval(randomer);
+                //展示实际的数据
+                if (repeat) {
+                    randRightTable(false);
+                } else {
+                    randRightTable(true);
+                }
+            });
+
+            $("#ready").on('click', function () {
+
+                //按钮状态
+                $("#ready").attr("disabled", true);
+                if (now+1 < Object.keys(prizePool).length) {
+                    $("#start").removeAttr("disabled");
+                }
+
+                //把结果写入左侧
+                var oneResult = "";
+                $("#resulting").find('td').each(function (index, value) {
+                    oneResult += value.innerText + "、";
+                });
+                $("#result-" + now).html(oneResult);
+
+                //更新准备的行
+                now++;
+                //刷新表格
+                drawRightTable();
+            });
+            /**
+             *  根据localStorage内容，开始绘制左侧抽奖表格
+             */
+            function drawLeftTable() {
+                $.each(JSON.parse(localStorage['prize-list']), function (index, value) {
+                    $.each(value, function (i, v) {
+                        $("#result-table").append("<tr><td>" + i + "（" + v + "名）</td><td id='result-" + index + "'/></tr>");
+                    });
+                });
+            }
+
+            drawLeftTable();
+
+
+        });
+
+        //修改一遍右侧表格内容，使用随机值,如果remove为true，随机一个减少一个
+        function randRightTable(remove) {
+            $("#resulting").children("tr").each(function (index, value) {
+                if(personPool.length==0){
+                    alert("没人能中奖了！！！");
+                }
+                var personNum = random(0, personPool.length)
+                var person = personPool[personNum];
+
+                $(value).children('td:eq(0)').html(person);
+                if (remove) {
+                    personPool[personNum] = "";
+                    removeEmpty();
+                }
+            });
+        }
+
+        //获取范围内的随机数
+        function random(min, max) {
+            return Math.floor(min + Math.random() * (max - min));
+        }
+    </script>
+</head>
+<body>
+<audio id="runningMic" class="hide" loop>
+    <source src="music/running.wav">
+</audio>
+<audio id="stopMic" class="hide">
+    <source src="music/stop.mp3">
+</audio>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>奖项（数量）</th>
+                    <th>获奖者</th>
+                </tr>
+                </thead>
+                <tbody id="result-table">
+
+                </tbody>
+            </table>
+        </div>
+        <div class="col-lg-4">
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-lg" id="ready">准备</button>
+                <button type="button" class="btn btn-success btn-lg" id="start">开始</button>
+                <button type="button" class="btn btn-danger btn-lg" id="stop">停</button>
+            </div>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th id="head"></th>
+                </tr>
+                </thead>
+                <tbody id="resulting">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

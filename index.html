@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>抽奖</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-grid.min.css">
+    <link rel="stylesheet" href="css/bootstrap-reboot.min.css">
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            //TODO 注册上传txt事件，并把文档内容写入 localStorage
+            $("#txt-upload").on('change', function (e) {
+                //清空member-list
+                $("#member-list").val("");
+
+                var inputFiles = this.files;
+                if (inputFiles == undefined || inputFiles.length == 0) return;
+                var inputFile = inputFiles[0];
+
+
+                /*  var deferred = $.Deferred();
+                  deferred.done(function (value) {*/
+
+                //初始化reader对象
+                var reader = new FileReader();
+
+                //注册reader操作
+                reader.onload = function (event) {
+                    // console.log(event);
+                    // $("#member-list").val(event.target.result);
+                    var hashSet = str2Set(event.target.result);
+                    //把对象循环添加到text area 里面
+                    for (var i in hashSet) {
+                        $("#member-list").val(i + "\r\n" + $("#member-list").val());
+                    }
+
+                    // console.log(hashSet);
+                };
+
+                reader.readAsText(inputFile, "UTF-8");
+                // }).then(function () {
+                // 必须要延迟执行，不然有极大记录拿不到值
+                setTimeout(function () {
+                    settingStore();
+                }, 5);
+
+                // });
+                // deferred.resolve(1);
+
+
+                // console.log("save");
+                // console.log(reader);
+            });
+
+            //函数，输入字符串，以换行分割，输出一个对象，hash set的那种
+            function str2Set(result) {
+                var resultList = result.split("\r\n");
+                var hashSet = {};
+                resultList.forEach(function (value, index, array) {
+                    if (value !== '') {
+                        hashSet[value] = true;
+                    }
+                })
+                return hashSet;
+            }
+
+            $(".setting").change(function () {
+                settingStore();
+            });
+
+            function settingStore() {
+                // console.log($("#member-list").val());
+                localStorage['member-list'] = JSON.stringify($("#member-list").val());
+                localStorage['music-on'] = JSON.stringify($("#music-on").is(':checked'));
+                localStorage['can-multi'] = JSON.stringify($("#can-multi").is(':checked'));
+                var prizeList = {};
+                $("#prize-list").children("tr").each(function (index, value) {
+                    var prize = $(value).find('input').eq(0).val();
+                    var num = $(value).find('input').eq(1).val();
+                    var prizeNumPair = {};
+                    prizeNumPair[prize] = num;
+                    prizeList[index] = prizeNumPair;
+                });
+                localStorage['prize-list'] = JSON.stringify(prizeList);
+            }
+
+            function settingRead() {
+                if (JSON.parse(localStorage['music-on'])) {
+                    $("#music-on").prop("checked", true);
+                }
+                if (JSON.parse(localStorage['can-multi'])) {
+                    $("#can-multi").prop("checked", true);
+                }
+                $("#member-list").val(JSON.parse(localStorage['member-list']));
+
+                $.each(JSON.parse(localStorage['prize-list']),function (index,value) {
+                    $.each(value,function (i,v) {
+                        $("#prize-list").children('tr').eq(index).find('input').eq(0).val(i);
+                        $("#prize-list").children('tr').eq(index).find('input').eq(1).val(v);
+
+                    });
+                    // $("#prize-list").children('tr').eq(index).find('input').eq(0).val(i);
+                    // console.log(index);
+                    // console.log(value);
+                });
+            }
+
+            settingRead();
+        })
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <h1>奖项表格（抽奖顺序从上往下）</h1>
+            <table class="table setting">
+                <thead>
+                <tr>
+                    <th>x等奖</th>
+                    <th>数量</th>
+                </tr>
+                </thead>
+                <tbody id="prize-list">
+                <tr>
+                    <td><input type="text" class="form-control"/></td>
+                    <td><input type="text" class="form-control"/></td>
+                </tr>
+                <tr>
+                    <td><input type="text" class="form-control"/></td>
+                    <td><input type="text" class="form-control"/></td>
+                </tr>
+                <tr>
+                    <td><input type="text" class="form-control"/></td>
+                    <td><input type="text" class="form-control"/></td>
+                </tr>
+                <tr>
+                    <td><input type="text" class="form-control"/></td>
+                    <td><input type="text" class="form-control"/></td>
+                </tr>
+                <tr>
+                    <td><input type="text" class="form-control"/></td>
+                    <td><input type="text" class="form-control"/></td>
+                </tr>
+                <tr>
+                    <td><input type="text" class="form-control"/></td>
+                    <td><input type="text" class="form-control"/></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input type="checkbox" class="form-check-input setting" value="" id="can-multi">可重复中奖
+                </label>
+            </div>
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input type="checkbox" class="form-check-input setting" value="" id="music-on">音效
+                </label>
+            </div>
+            <!--<input type="email" class="form-control setting" id="email" placeholder="x人同时抽奖">-->
+            <a href="./goSurprise.html" class="btn btn-primary ">去抽奖！</a>
+
+        </div>
+        <div class="col">
+            <h1>人员名单， 上传.txt文件</h1>
+
+            <!--jquery 读取 上传文件
+            https://www.liaoxuefeng.com/wiki/001434446689867b27157e896e74d51a89c25cc8b43bdb3000/00143449993875172bbfac4b9764e2d9e2b5a17c706b3db000 廖雪峰的网站-->
+            <div class="form-group">
+                <label for="txt-upload">txt上传</label>
+                <input type="file" class="form-control" id="txt-upload">
+            </div>
+            <div class="form-group">
+                <label for="member-list">抽奖名单</label>
+                <textarea class="form-control setting" rows="30" id="member-list" disabled></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

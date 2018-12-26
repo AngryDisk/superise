@@ -26,6 +26,6 @@
 
 由于自己平时总是爱看图，本着方便的原则，给几个截图，供大家观看
 
-![pageIndex](/pic/p1.jpg)
+![pageIndex](/pic/p1.png)
 
-![pageSuprise](/pic/p2.jpg)
+![pageSuprise](/pic/p2.png)
